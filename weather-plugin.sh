@@ -91,7 +91,7 @@ COLD_TEMP=0
 # Other settings ______________________________________________________________
 
 # Display the weather description. yes/no
-DISPLAY_LABEL="no"
+DISPLAY_LABEL="yes"
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -330,8 +330,10 @@ function outputCompact {
         WEATHER_FONT_CODE=5
     fi
     
+    DELIMITER="%{F$PRIMARY_COLOR}|%{F-}"
+
     if [ $DISPLAY_LABEL = "yes" ]; then
-    	OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-} | $DESCRIPTION$ERR_MSG$COLOR_TEXT_BEGIN$COLOR_TEXT_END%{F-} $WIND"
+    	OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-} $DELIMITER $DESCRIPTION$ERR_MSG%{F-} $DELIMITER $WIND"
     else
         OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-}$ERR_MSG$COLOR_TEXT_BEGIN$COLOR_TEXT_END%{F-} $WIND"
     fi
