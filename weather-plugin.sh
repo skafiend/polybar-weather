@@ -5,7 +5,7 @@
 # API settings ________________________________________________________________
 # You will need to provide your personal (and free) api key that you can obtain at https://openweathermap.org/api
 APIKEY=`cat $HOME/.dotfiles/polybar/.config/polybar/weather-key`
-OLD_DATA="$HOME/.dotfiles/polybar/.config/polybar/"
+CACHE="$HOME/.dotfiles/polybar/.config/polybar/weather-last"
 # if you leave these empty location will be picked based on your ip-adres
 CITY_NAME=''
 COUNTRY_CODE=''
@@ -92,6 +92,7 @@ COLD_TEMP=0
 
 # Display the weather description. yes/no
 DISPLAY_LABEL="yes"
+DELIMITER="%{F$PRIMARY_COLOR}|%{F-}"
 
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -126,12 +127,12 @@ function getData {
     CODE="$?"
 
     if [ -z "$RESPONSE" ]; then
-	    if [ $(find $OLD_DATA -name *weather-last* -mmin -360 | wc -l) -gt 0 ] && [ ! -z "$OLD_DATA/weather-last" ]; then
-		cat $OLD_DATA/weather-last
-		exit 2
-	    else 
-		echo " "
-		exit 3
+	    if [ -f "$CACHE" ] && [ ! -z "$CACHE" ]; then
+            cat $CACHE
+            exit 2
+        else 
+            echo " "
+            exit 3
 	    fi
     fi
 
@@ -330,16 +331,14 @@ function outputCompact {
         WEATHER_FONT_CODE=5
     fi
     
-    DELIMITER="%{F$PRIMARY_COLOR}|%{F-}"
-
     if [ $DISPLAY_LABEL = "yes" ]; then
     	OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-} $DELIMITER $DESCRIPTION$ERR_MSG%{F-} $DELIMITER $WIND"
     else
         OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-}$ERR_MSG$COLOR_TEXT_BEGIN$COLOR_TEXT_END%{F-} $WIND"
     fi
-	
-    echo "$OUTPUT" > "$OLD_DATA/weather-last" 
-    echo "$OUTPUT"
+    
+    echo "$OUTPUT" > "$CACHE"
+    cat "$CACHE"
 }
 
 getData $1
