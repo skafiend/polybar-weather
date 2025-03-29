@@ -337,8 +337,8 @@ function outputCompact {
         OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-}$ERR_MSG$COLOR_TEXT_BEGIN$COLOR_TEXT_END%{F-} $WIND"
     fi
     
+    echo "$OUTPUT"
     echo "$OUTPUT" > "$CACHE"
-    cat "$CACHE"
 }
 
 getData $1
