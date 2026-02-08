@@ -4,10 +4,13 @@
 
 # API settings ________________________________________________________________
 # You will need to provide your personal (and free) api key that you can obtain at https://openweathermap.org/api
-APIKEY=`cat $HOME/.dotfiles/polybar/.config/polybar/weather-key`
-CACHE="$HOME/.dotfiles/polybar/.config/polybar/weather-last"
+#SCRIPT_PATH=$(realpath "$0")
+#SCRIPT_FOLDER=${SCRIPT_PATH%\/*}
+
+APIKEY=$(cat /home/skafiend/.config/polybar/weather-key)
+CACHE="/home/skafiend/.config/polybar/weather-last"
 # if you leave these empty location will be picked based on your ip-adres
-CITY_NAME=''
+CITY_NAME='Tula'
 COUNTRY_CODE=''
 # Desired output language
 LANG="en"
@@ -108,7 +111,6 @@ if [ -z "$CITY_NAME" ]; then
 fi
 
 RESPONSE=""
-ERROR=0
 ERR_MSG=""
 if [ $UNITS = "kelvin" ]; then
     UNIT_URL=""
@@ -117,42 +119,20 @@ else
 fi
 URL="api.openweathermap.org/data/2.5/weather?appid=$APIKEY$UNIT_URL&lang=$LANG&q=$(echo $CITY_NAME| sed 's/ /%20/g'),${COUNTRY_CODE}"
 
+#echo $URL
+
 function getData {
-    ERROR=0
-    # For logging purposes
-#    echo " " > "$HOME/.weather.log"
-#    echo `date`" ################################" >> "$HOME/.weather.log"
     RESPONSE=`curl --fail --connect-timeout 10 --max-time 20 -s $URL`
+    #curl api.openweathermap.org > /dev/null 2>&1
 
-    CODE="$?"
-
-    if [ -z "$RESPONSE" ]; then
-	    if [ -f "$CACHE" ] && [ ! -z "$CACHE" ]; then
+    if [[ $? -ne 0 ]] && [[ ! -z "$CACHE" ]]; then 
+        # in seconds since last Epoch
+        TIME=$(date +%s)
+        LAST_CHANGE=$(stat --format "%Y" $CACHE)
+        if [[ $((TIME - LASTCHANGE)) -le 1800 ]]; then 
             cat $CACHE
-            exit 2
-        else 
-            echo " "
-            exit 3
-	    fi
-    fi
-
-#    echo "Response: $RESPONSE" >> "$HOME/.weather.log"
-    RESPONSECODE=0
-    if [ $CODE -eq 0 ]; then
-        RESPONSECODE=`echo $RESPONSE | jq .cod`
-    fi
-    if [ $CODE -ne 0 ] || [ ${RESPONSECODE:=429} -ne 200 ]; then
-        if [ $CODE -ne 0 ]; then
-            ERR_MSG="curl Error $CODE"
-#            echo "curl Error $CODE" >> "$HOME/.weather.log"
-        else
-            ERR_MSG="Conn. Err. $RESPONSECODE"
-#            echo "API Error $RESPONSECODE" >> "$HOME/.weather.log"
-        fi
-        ERROR=1
-	exit 1
-    else
-	ERROR=0
+        fi 
+        exit 99
     fi
 }
 
@@ -332,9 +312,9 @@ function outputCompact {
     fi
     
     if [ $DISPLAY_LABEL = "yes" ]; then
-    	OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-} $DELIMITER $DESCRIPTION$ERR_MSG%{F-} $DELIMITER $WIND"
+    	OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-} $DELIMITER $DESCRIPTION$ERR_MSG%{F-} $DELIMITER $WIND%{F$COLOR_COLD}$HUMIDITY%{T1} %{T-}%{F-} $DELIMITER"  
     else
-        OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-}$ERR_MSG$COLOR_TEXT_BEGIN$COLOR_TEXT_END%{F-} $WIND"
+        OUTPUT="%{F$COLOR_HOT}$TEMP%{T$WEATHER_FONT_CODE}%{F$ICON_COLOR}$ICON%{F-}%{T-}$ERR_MSG$COLOR_TEXT_BEGIN$COLOR_TEXT_END%{F-} $WIND $DELIMITER"
     fi
     
     echo "$OUTPUT"
@@ -343,24 +323,22 @@ function outputCompact {
 
 getData $1
 
-if [ $ERROR -eq 0 ]; then
-    MAIN=`echo $RESPONSE | jq .weather[0].main`
-    WID=`echo $RESPONSE | jq .weather[0].id`
-    DESC=`echo $RESPONSE | jq .weather[0].description`
-    SUNRISE=`echo $RESPONSE | jq .sys.sunrise`
-    SUNSET=`echo $RESPONSE | jq .sys.sunset`
-    DATE=`date +%s`
-    WIND=""
-    TEMP=`echo $RESPONSE | jq .main.temp`
-    if [ $DISPLAY_LABEL = "yes" ]; then
-        DESCRIPTION=`echo "$RESPONSE" | jq .weather[0].description | tr -d '"' | awk '{for (i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1'`""
-    else
-        DESCRIPTION=""
-    fi
-    PRESSURE=`echo $RESPONSE | jq .main.pressure`
-    HUMIDITY=`echo $RESPONSE | jq .main.humidity`
-    setIcons
-    outputCompact
+MAIN=`echo $RESPONSE | jq .weather[0].main`
+WID=`echo $RESPONSE | jq .weather[0].id`
+DESC=`echo $RESPONSE | jq .weather[0].description`
+SUNRISE=`echo $RESPONSE | jq .sys.sunrise`
+SUNSET=`echo $RESPONSE | jq .sys.sunset`
+DATE=`date +%s`
+WIND=""
+TEMP=`echo $RESPONSE | jq .main.temp`
+if [ $DISPLAY_LABEL = "yes" ]; then
+    DESCRIPTION=`echo "$RESPONSE" | jq .weather[0].description | tr -d '"' | awk '{for (i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1'`""
 else
-    echo "Error"
+    DESCRIPTION=""
 fi
+
+PRESSURE=`echo $RESPONSE | jq .main.pressure`
+HUMIDITY=`echo $RESPONSE | jq .main.humidity`
+
+setIcons
+outputCompact
