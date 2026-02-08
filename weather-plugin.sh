@@ -10,7 +10,7 @@
 APIKEY=$(cat /home/skafiend/.config/polybar/weather-key)
 CACHE="/home/skafiend/.config/polybar/weather-last"
 # if you leave these empty location will be picked based on your ip-adres
-CITY_NAME='Tula'
+CITY_NAME=''
 COUNTRY_CODE=''
 # Desired output language
 LANG="en"
